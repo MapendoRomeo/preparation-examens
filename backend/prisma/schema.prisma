@@ -1,0 +1,76 @@
+// ---------------------------------------------------------------------------
+// Schéma Prisma — préparation et simulation d'examens
+//
+// RÈGLE ABSOLUE : cette base de données contient UNIQUEMENT du contenu
+// pédagogique (modules, chapitres, questions). Aucune table ne doit jamais
+// stocker une tentative d'examen, une réponse utilisateur, un score, une
+// statistique ou un historique. Voir README § « Non-persistance des tentatives ».
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Seules valeurs acceptées pour `Question.correctAnswer`.
+/// L'énumération est appliquée au niveau PostgreSQL : il est impossible
+/// d'insérer autre chose que A, B, C ou D.
+enum AnswerLetter {
+  A
+  B
+  C
+  D
+}
+
+model Module {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(200)
+  description String    @default("") @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  chapters    Chapter[]
+
+  @@index([name])
+}
+
+model Chapter {
+  id          String     @id @default(uuid()) @db.Uuid
+  moduleId    String     @db.Uuid
+  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  name        String     @db.VarChar(200)
+  description String     @default("") @db.Text
+  /// Ordre du chapitre pendant l'examen (croissant).
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  questions   Question[]
+
+  // Index composite : sert la liste ordonnée des chapitres d'un module.
+  @@index([moduleId, order])
+}
+
+model Question {
+  /// Identifiant lisible fourni par l'utilisateur (ex. « Q001 »).
+  id            String       @id @db.VarChar(64)
+  chapterId     String       @db.Uuid
+  chapter       Chapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  content       String       @db.Text
+  assertionA    String       @db.Text
+  assertionB    String       @db.Text
+  assertionC    String       @db.Text
+  assertionD    String       @db.Text
+  correctAnswer AnswerLetter
+  explanation   String       @default("") @db.Text
+  order         Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Index composite : sert la liste ordonnée des questions d'un chapitre.
+  @@index([chapterId, order])
+  // Index de recherche plein texte simple sur l'énoncé.
+  @@index([content])
+}

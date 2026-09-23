@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Préparation &amp; Simulation d'Examens</title>
+    <meta
+      name="description"
+      content="Gérez vos modules, chapitres et questions, puis passez vos examens chapitre par chapitre."
+    />
+    <script>
+      // Applique le thème avant le premier rendu pour éviter un flash de thème
+      // clair au chargement. Le thème est la seule préférence persistée.
+      (function () {
+        try {
+          var stored = localStorage.getItem('exam-theme')
+          var theme =
+            stored ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
